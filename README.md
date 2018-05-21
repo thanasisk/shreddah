@@ -4,6 +4,14 @@
 
 ## Usage
 ```shreddah -h``` will show you the options
+```Application Options:
+  -u, --unlink  unlink file after shredding
+  -p, --pass=   number of passes (default: 3)
+  -f, --force   force chmod if file is not writable
+  -h, --help    Show this help message
+```
+
+
 ## Platforms
 Currently ONLY tested on Linux, with FreeBSD tests to follow. It will *NOT* run on your Windows/OSX
 ## Caveat Emptor
