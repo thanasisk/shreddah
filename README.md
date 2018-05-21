@@ -3,6 +3,7 @@
 ## a (partial) GNU shred(1) implementation in Golang
 
 ## Usage
+It shreds files to prevent forensics and optionally remove them.
 ```shreddah -h``` will show you the options
 ```Application Options:
   -u, --unlink  unlink file after shredding
