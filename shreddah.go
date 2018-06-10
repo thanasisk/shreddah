@@ -9,6 +9,7 @@ import "os"
 import "syscall"
 import "unsafe"
 import "io"
+import "bytes"
 
 // before the crypto purists start a pitchfork mob - we need some bytes
 // for non-crypto purposes
@@ -21,6 +22,7 @@ var opts struct {
 	Unlink bool `short:"u" long:"unlink" description:"unlink file"`
 	Passes uint `short:"p" long:"pass" default:"3" description:"number of passes"`
 	Force  bool `short:"f" long:"force" description:"force chmod"`
+	Zero   bool `short:"z" long:"zero" description:"do a last pass with zeroes"`
 }
 
 const AlignSize = 4096
@@ -64,17 +66,15 @@ func randomString(n int) string {
 	return string(b)
 }
 
-func overwrite(f *os.File, sz_file int64) (int, error) {
+func overwrite(f *os.File, sz_file int64, pattern []byte) (int, error) {
 	out := io.Writer(f)
 	block := AlignedBlock(BlockSize)
 	chunks := int64(0)
 	if sz_file%int64(len(block)) > 0 {
 		chunks++
 	}
-	buf := make([]byte, len(block))
-	rand.Read(buf)
 	for i := int64(0); i < chunks; i++ {
-		if _, err := out.Write(buf); err != nil {
+		if _, err := out.Write(pattern); err != nil {
 			return -1, err
 		}
 	}
@@ -118,11 +118,21 @@ func shred(fname string) (int, error) {
 	}
 	// pray!
 	defer f.Close()
+	block := AlignedBlock(BlockSize)
+	pattern := make([]byte, len(block))
 	for i := uint(0); i < opts.Passes; i++ {
-		if _, err := overwrite(f, fi.Size()); err != nil {
+		rand.Read(pattern)
+		if _, err := overwrite(f, fi.Size(), pattern); err != nil {
 			return -1, err
 		}
 		f.Seek(0, 0)
+	}
+	if opts.Zero {
+		f.Seek(0, 0)
+		buf := bytes.Repeat([]byte{0x00}, len(block))
+		if _, err := overwrite(f, fi.Size(), buf); err != nil {
+			return -1, err
+		}
 	}
 	return 0, nil
 }
